@@ -1,10 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const Sidebar = () => {
-  const { user, logout } = useAuth(); // 1. Ambil fungsi logout
+const Sidebar = ({ isOpen, onClose }) => {
+  const { user, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate(); // 2. Init navigate
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -34,7 +34,6 @@ const Sidebar = () => {
         { path: "/customer/buy", label: "Beli Gas", icon: "plus" },
       ],
     };
-
     return menus[user?.role] || [];
   };
 
@@ -96,7 +95,6 @@ const Sidebar = () => {
           d="M12 4v16m8-8H4"
         />
       ),
-      // 3. Tambahkan icon logout
       logout: (
         <path
           strokeLinecap="round"
@@ -105,69 +103,111 @@ const Sidebar = () => {
           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
         />
       ),
+      close: (
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M6 18L18 6M6 6l12 12"
+        />
+      ),
     };
-
     return icons[iconName] || icons.home;
   };
 
   const menuItems = getMenuItems();
 
   return (
-    // 4. Ubah layout menjadi flex-col agar footer bisa ditaruh di bawah
-    <aside className="w-64 bg-white shadow-lg min-h-screen flex flex-col">
-      {/* Bagian Atas & Menu Utama (flex-1 akan mengisi ruang kosong) */}
-      <div className="p-6 flex-1">
-        <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900">Gas 3Kg</h2>
-          <p className="text-sm text-gray-600 mt-1">{user?.role}</p>
+    <>
+      {/* Overlay Gelap (Mobile Only) */}
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity md:hidden ${
+          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+        onClick={onClose}
+      ></div>
+
+      {/* Sidebar Container */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-30 w-64 bg-white shadow-lg flex flex-col transition-transform duration-300 ease-in-out
+          md:translate-x-0 md:static md:inset-auto md:min-h-screen
+          ${isOpen ? "translate-x-0" : "-translate-x-full"} 
+        `}
+      >
+        {/* BAGIAN ATAS: Header + Menu (Gunakan flex-1 agar mengisi ruang kosong) */}
+        <div className="p-6 flex-1 overflow-y-auto">
+          {/* Header Sidebar */}
+          <div className="mb-8 flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Gas 3Kg</h2>
+              <p className="text-sm text-gray-600 mt-1">{user?.role}</p>
+            </div>
+
+            {/* Tombol Close (Mobile Only) */}
+            <button
+              onClick={onClose}
+              className="md:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {getIcon("close")}
+              </svg>
+            </button>
+          </div>
+
+          <nav className="space-y-2">
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={onClose}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                    isActive
+                      ? "bg-primary-100 text-primary-700"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    {getIcon(item.icon)}
+                  </svg>
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        <nav className="space-y-2">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                  isActive
-                    ? "bg-primary-100 text-primary-700"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  {getIcon(item.icon)}
-                </svg>
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Bagian Bawah: Tombol Logout */}
-      <div className="p-4 mb-8 border-t border-gray-100">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {/* BAGIAN BAWAH: Footer/Logout (Akan selalu terdorong ke paling bawah) */}
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition"
           >
-            {getIcon("logout")}
-          </svg>
-          <span className="font-medium">Keluar</span>
-        </button>
-      </div>
-    </aside>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              {getIcon("logout")}
+            </svg>
+            <span className="font-medium">Keluar</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 };
 
