@@ -9,7 +9,7 @@ import Loading from "../../components/ui/Loading";
 import { formatCurrency, formatDate } from "../../utils/helpers";
 
 const CustomerOrderDetail = () => {
-  const { orderId } = useParams(); // Ambil ID dari URL
+  const { orderId } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,6 @@ const CustomerOrderDetail = () => {
     }
   };
 
-  // Helper Status Pengiriman (Sama seperti Dashboard)
   const getDeliveryStatus = (orderData) => {
     const delivery = orderData.delivery && orderData.delivery[0];
     if (!delivery) return null;
@@ -147,7 +146,6 @@ const CustomerOrderDetail = () => {
                 <Badge status={order.status} type="payment" />
               </div>
 
-              {/* Jika pending, tampilkan tombol bayar */}
               {order.status === "PENDING" && order.snap_redirect_url && (
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-4">
                   <p className="text-yellow-800 text-sm mb-2">
@@ -165,37 +163,47 @@ const CustomerOrderDetail = () => {
               )}
             </Card>
 
-            {/* 2. Card Item Produk */}
+            {/* 2. Card Item Produk (DIPERBARUI) */}
             <Card>
               <h3 className="font-bold text-gray-900 mb-4">Rincian Produk</h3>
-              {/* Handle jika order_items null atau array kosong */}
               {!order.order_items || order.order_items.length === 0 ? (
                 <div className="text-gray-500 text-center py-4 italic bg-gray-50 rounded">
-                  Data item produk tidak tersedia (Mungkin pembelian langsung
-                  gas refill)
+                  Data item produk tidak tersedia.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {order.order_items.map((item, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center border-b last:border-0 pb-4 last:pb-0"
+                      // Ubah layout menjadi items-start agar deskripsi panjang tidak merusak layout
+                      className="flex justify-between items-start border-b last:border-0 pb-4 last:pb-0"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-400">
+                      <div className="flex gap-4">
+                        {/* Icon Box */}
+                        <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center text-gray-400">
                           📦
                         </div>
+
+                        {/* Detail Produk */}
                         <div>
-                          {/* Fallback nama produk jika tidak ada relasi */}
                           <p className="font-medium text-gray-900">
                             {item.product?.name || "Produk Gas"}
                           </p>
                           <p className="text-sm text-gray-500">
                             {item.quantity} x {formatCurrency(item.price)}
                           </p>
+
+                          {/* --- MENAMPILKAN DESKRIPSI DISINI --- */}
+                          {item.product?.description && (
+                            <p className="text-xs text-gray-500 mt-1 italic max-w-md">
+                              "{item.product.description}"
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <p className="font-medium">
+
+                      {/* Total Harga per Item */}
+                      <p className="font-medium whitespace-nowrap ml-4">
                         {formatCurrency(item.quantity * item.price)}
                       </p>
                     </div>
@@ -207,7 +215,6 @@ const CustomerOrderDetail = () => {
 
           {/* Bagian Kanan: Info Pengiriman & Ringkasan (1/3 lebar) */}
           <div className="space-y-6">
-            {/* 3. Card Pengiriman */}
             <Card>
               <h3 className="font-bold text-gray-900 mb-4">
                 Status Pengiriman
@@ -237,7 +244,6 @@ const CustomerOrderDetail = () => {
                     {deliveryInfo.text}
                   </p>
 
-                  {/* Nama Kurir jika ada */}
                   {order.delivery[0]?.courir_name && (
                     <div className="mt-3 pt-3 border-t border-gray-200/50">
                       <p className="text-xs text-gray-500">Kurir:</p>
@@ -254,7 +260,6 @@ const CustomerOrderDetail = () => {
               )}
             </Card>
 
-            {/* 4. Card Ringkasan Pembayaran */}
             <Card>
               <h3 className="font-bold text-gray-900 mb-4">Ringkasan Harga</h3>
               <div className="space-y-2 text-sm">
