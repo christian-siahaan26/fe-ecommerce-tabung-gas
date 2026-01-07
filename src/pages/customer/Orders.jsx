@@ -23,8 +23,6 @@ const CustomerOrders = () => {
       setLoading(true);
       const response = await salesService.getAll();
 
-      console.log("Customer Orders Response:", response);
-
       if (
         response.status &&
         response.data &&
@@ -41,14 +39,13 @@ const CustomerOrders = () => {
     }
   };
 
-  // --- HELPER STATUS PENGIRIMAN (Sama dengan Dashboard) ---
   const getDeliveryStatusData = (order) => {
-    // 1. Cek Payment
+    // Cek Payment
     if (order.status === "PENDING") {
       return { label: "Menunggu Pembayaran", color: "gray", code: "PENDING" };
     }
 
-    // 2. Cek Data Delivery
+    // Cek Data Delivery
     const deliveryData = order.delivery && order.delivery[0];
 
     if (deliveryData) {
@@ -73,7 +70,7 @@ const CustomerOrders = () => {
       }
     }
 
-    // 3. Fallback
+    // Fallback
     if (order.status === "SUCCESS") {
       return { label: "Diproses", color: "yellow", code: "PROCESSING" };
     }
@@ -110,7 +107,6 @@ const CustomerOrders = () => {
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">
                       Status Pembayaran
                     </th>
-                    {/* KOLOM BARU */}
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">
                       Status Pengiriman
                     </th>
@@ -124,7 +120,6 @@ const CustomerOrders = () => {
                 </thead>
                 <tbody>
                   {orders.map((order) => {
-                    // Panggil helper di sini
                     const deliveryInfo = getDeliveryStatusData(order);
 
                     return (

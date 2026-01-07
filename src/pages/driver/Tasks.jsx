@@ -33,7 +33,6 @@ const DriverTasks = () => {
         allTasks = response.data;
       }
 
-      // Filter tugas milik kurir yang login
       const myTasks = allTasks.filter(
         (t) => t.courir_name?.toLowerCase() === user?.name?.toLowerCase()
       );
@@ -102,10 +101,8 @@ const DriverTasks = () => {
     );
   };
 
-  // Fungsi Helper untuk membuka WhatsApp (Opsional, fitur keren untuk driver)
   const openWhatsApp = (phone) => {
     if (!phone) return;
-    // Format nomor HP (hapus 0 di depan ganti 62, atau biarkan jika sudah format benar)
     let formatted = phone.replace(/\D/g, "");
     if (formatted.startsWith("0")) {
       formatted = "62" + formatted.substring(1);
@@ -113,7 +110,6 @@ const DriverTasks = () => {
     window.open(`https://wa.me/${formatted}`, "_blank");
   };
 
-  // Fungsi Helper untuk buka Google Maps (Opsional)
   const openMaps = (address) => {
     if (!address) return;
     window.open(
@@ -142,8 +138,6 @@ const DriverTasks = () => {
             {tasks.map((task) => {
               const status = (task.delivery_status || "").toUpperCase();
 
-              // 1. AMBIL DATA CUSTOMER DARI RELASI ORDER
-              // Pastikan Backend sudah include: { order: { include: { user: true } } }
               const customer = task.order?.user;
 
               return (
@@ -174,7 +168,7 @@ const DriverTasks = () => {
                         </p>
                       </div>
 
-                      {/* --- 2. TAMPILAN DATA CUSTOMER (ALAMAT & HP) --- */}
+                      {/* ---TAMPILAN DATA CUSTOMER (ALAMAT & HP) --- */}
                       <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 max-w-md">
                         <p className="text-xs text-gray-500 font-bold uppercase mb-2">
                           Info Penerima (Customer)
@@ -212,7 +206,7 @@ const DriverTasks = () => {
                               <span className="text-gray-700 font-mono">
                                 {customer.phone || "-"}
                               </span>
-                              {/* Tombol WA Kecil */}
+
                               {customer.phone && (
                                 <button
                                   onClick={() => openWhatsApp(customer.phone)}
@@ -232,7 +226,6 @@ const DriverTasks = () => {
                           </p>
                         )}
                       </div>
-                      {/* ----------------------------------------------- */}
                     </div>
 
                     {/* Tombol Aksi Kanan (Status) */}

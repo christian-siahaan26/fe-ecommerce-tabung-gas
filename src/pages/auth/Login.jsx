@@ -22,7 +22,7 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    // Clear error for this field
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -63,23 +63,20 @@ const Login = () => {
       if (result.success) {
         const { user } = result;
 
-        // --- UPDATE LOGIC REDIRECT ---
-        // 1. Pastikan role ada, dan ubah jadi HURUF BESAR agar cocok dengan key object
         const userRole = (user.role || "").toUpperCase();
 
-        console.log("Login Berhasil, Role:", userRole); // Cek di console browser
+        console.log("Login Berhasil, Role:", userRole);
 
         const dashboardRoutes = {
           OWNER: "/owner/dashboard",
           ADMIN: "/admin/dashboard",
           COURIR: "/driver/dashboard",
-          DRIVER: "/driver/dashboard", // Jaga-jaga jika token isinya DRIVER
+          DRIVER: "/driver/dashboard",
           CUSTOMER: "/customer/dashboard",
         };
 
         const redirectPath = dashboardRoutes[userRole] || "/";
 
-        // Redirect
         navigate(redirectPath);
       } else {
         setErrorMessage(result.message || "Login gagal.");

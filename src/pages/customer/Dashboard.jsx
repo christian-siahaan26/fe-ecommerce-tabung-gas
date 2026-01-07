@@ -1,15 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend, // Penting untuk dual axis
-} from "recharts";
 import { salesService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import DashboardLayout from "../../components/layout/DashboardLayout";
@@ -17,13 +7,13 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Loading from "../../components/ui/Loading";
 import { formatCurrency } from "../../utils/helpers";
+import DualAxisBarChart from "../../components/charts/DualAxisBarChart";
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  // State Statistik Kartu Atas
   const [stats, setStats] = useState({
     totalOrders: 0,
     inProcess: 0,
@@ -31,8 +21,7 @@ const CustomerDashboard = () => {
     pendingPayment: 0,
   });
 
-  // State Data untuk Grafik & Filter
-  const [allPaidOrders, setAllPaidOrders] = useState([]); // Simpan data mentah
+  const [allPaidOrders, setAllPaidOrders] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [lastActiveOrder, setLastActiveOrder] = useState(null);
 
@@ -45,7 +34,6 @@ const CustomerDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  // Update grafik saat tahun berubah
   useEffect(() => {
     if (allPaidOrders.length > 0 || availableYears.length > 0) {
       const processed = processChartData(allPaidOrders, selectedYear);
@@ -65,7 +53,6 @@ const CustomerDashboard = () => {
       ) {
         const userOrders = response.data.data;
 
-        // --- 1. LOGIKA KARTU STATISTIK ---
         const totalOrders = userOrders.length;
 
         const pendingPayment = userOrders.filter(
@@ -92,12 +79,9 @@ const CustomerDashboard = () => {
 
         setStats({ totalOrders, pendingPayment, completed, inProcess });
 
-        // --- 2. PERSIAPAN DATA GRAFIK ---
-        // Ambil hanya order yang sudah dibayar (SUCCESS) untuk grafik pengeluaran
         const paidOrders = userOrders.filter((o) => o.status === "SUCCESS");
         setAllPaidOrders(paidOrders);
 
-        // Cari tahun-tahun yang tersedia
         const years = [
           ...new Set(
             paidOrders.map((o) => new Date(o.created_at).getFullYear())
@@ -107,10 +91,8 @@ const CustomerDashboard = () => {
           setAvailableYears(years.sort((a, b) => b - a));
         }
 
-        // Proses Data Grafik Awal
         setChartData(processChartData(paidOrders, selectedYear));
 
-        // --- 3. Last Order ---
         if (userOrders.length > 0) {
           setLastActiveOrder(userOrders[0]);
         }
@@ -138,20 +120,17 @@ const CustomerDashboard = () => {
       "Des",
     ];
 
-    // Template 12 bulan
     const monthlyData = months.map((month) => ({
       name: month,
-      expenditure: 0, // Total Uang (Rp)
-      count: 0, // Jumlah Transaksi (Kali)
+      expenditure: 0,
+      count: 0,
     }));
 
-    // Filter berdasarkan tahun
     const filteredOrders = orders.filter((order) => {
       const orderYear = new Date(order.created_at).getFullYear();
       return orderYear === parseInt(year);
     });
 
-    // Isi data
     filteredOrders.forEach((order) => {
       const date = new Date(order.created_at);
       const monthIndex = date.getMonth();
@@ -182,7 +161,6 @@ const CustomerDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -197,19 +175,20 @@ const CustomerDashboard = () => {
           </Button>
         </div>
 
-        {/* 1. Stats Cards */}
+        {/* --- GRID STATS (STYLE ADMIN) --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white border-l-4 border-blue-500">
+          {/* Card 1: Total Pesanan */}
+          <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Total Pesanan</p>
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="text-sm text-gray-600">Total Pesanan</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">
                   {stats.totalOrders}
                 </p>
               </div>
-              <div className="p-2 bg-blue-50 rounded-full">
+              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-blue-500"
+                  className="w-6 h-6 text-primary-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -225,19 +204,19 @@ const CustomerDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-white border-l-4 border-indigo-500">
+          {/* Card 2: Sedang Proses/Diantar (Blue) */}
+          <Card className="border-l-4 border-blue-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Sedang Proses/Diantar
-                </p>
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="text-sm text-gray-600">Sedang Proses</p>
+                <p className="text-3xl font-bold text-blue-600 mt-1">
                   {stats.inProcess}
                 </p>
+                <p className="text-xs text-gray-400 mt-1">Diproses/Diantar</p>
               </div>
-              <div className="p-2 bg-indigo-50 rounded-full">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-indigo-500"
+                  className="w-6 h-6 text-blue-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -253,17 +232,19 @@ const CustomerDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-white border-l-4 border-green-500">
+          {/* Card 3: Selesai Diantar (Green) */}
+          <Card className="border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 mb-1">Selesai Diantar</p>
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="text-sm text-gray-600">Selesai Diantar</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">
                   {stats.completed}
                 </p>
+                <p className="text-xs text-gray-400 mt-1">Pesanan Sukses</p>
               </div>
-              <div className="p-2 bg-green-50 rounded-full">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-green-500"
+                  className="w-6 h-6 text-green-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -279,19 +260,21 @@ const CustomerDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-white border-l-4 border-yellow-500">
+          {/* Card 4: Menunggu Pembayaran (Red) */}
+          <Card className="border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Menunggu Pembayaran
-                </p>
-                <p className="text-3xl font-bold text-gray-800">
+                <p className="text-sm text-gray-600">Belum Bayar</p>
+                <p className="text-3xl font-bold text-red-600 mt-1">
                   {stats.pendingPayment}
                 </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Menunggu Pembayaran
+                </p>
               </div>
-              <div className="p-2 bg-yellow-50 rounded-full">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-yellow-500"
+                  className="w-6 h-6 text-red-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -300,7 +283,7 @@ const CustomerDashboard = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                   />
                 </svg>
               </div>
@@ -309,132 +292,28 @@ const CustomerDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 2. Grafik Pengeluaran (2/3 layar) */}
+          {/* Grafik Pengeluaran */}
           <div className="lg:col-span-2">
-            <Card className="h-full">
-              {/* Header Grafik & Filter */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h3 className="font-bold text-gray-800">
-                  Grafik Pengeluaran ({selectedYear})
-                </h3>
-
-                <div className="flex items-center gap-2">
-                  <label htmlFor="yearFilter" className="text-sm text-gray-600">
-                    Tahun:
-                  </label>
-                  <select
-                    id="yearFilter"
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                    className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-primary-500 focus:border-primary-500 outline-none"
-                  >
-                    {availableYears.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="h-72 flex items-center justify-center">
-                  <Loading />
-                </div>
-              ) : chartData.length > 0 ? (
-                <div className="h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        dy={10}
-                      />
-
-                      {/* Sumbu Kiri: Rupiah */}
-                      <YAxis
-                        yAxisId="left"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#3B82F6", fontSize: 12 }}
-                        tickFormatter={(value) =>
-                          value === 0 ? "0" : `${value / 1000}k`
-                        }
-                      />
-
-                      {/* Sumbu Kanan: Jumlah Transaksi */}
-                      <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#F59E0B", fontSize: 12 }}
-                        tickFormatter={(value) => value}
-                      />
-
-                      <Tooltip
-                        cursor={{ fill: "#F3F4F6" }}
-                        formatter={(value, name) => {
-                          if (name === "expenditure")
-                            return [formatCurrency(value), "Total Pengeluaran"];
-                          if (name === "count")
-                            return [`${value} Kali`, "Frekuensi Belanja"];
-                          return [value, name];
-                        }}
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: "none",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        }}
-                      />
-
-                      <Legend
-                        verticalAlign="top"
-                        height={36}
-                        formatter={(value) => {
-                          return value === "expenditure"
-                            ? "Pengeluaran (Rp)"
-                            : "Frekuensi Belanja (Qty)";
-                        }}
-                      />
-
-                      <Bar
-                        yAxisId="left"
-                        dataKey="expenditure"
-                        fill="#3B82F6" // Biru
-                        radius={[4, 4, 0, 0]}
-                        barSize={30}
-                        name="expenditure"
-                      />
-                      <Bar
-                        yAxisId="right"
-                        dataKey="count"
-                        fill="#F59E0B" // Orange
-                        radius={[4, 4, 0, 0]}
-                        barSize={30}
-                        name="count"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-72 flex flex-col items-center justify-center text-gray-400">
-                  <p>Belum ada data transaksi sukses.</p>
-                </div>
-              )}
-            </Card>
+            <DualAxisBarChart
+              title="Grafik Pengeluaran & Aktivitas"
+              data={chartData}
+              year={selectedYear}
+              years={availableYears}
+              onYearChange={setSelectedYear}
+              height="h-80"
+              bar1Key="expenditure"
+              bar1Label="Total Belanja"
+              bar1Color="#3B82F6"
+              bar2Key="count"
+              bar2Label="Frekuensi"
+              bar2Color="#F59E0B"
+            />
           </div>
 
-          {/* 3. Status Terakhir (1/3 layar) */}
+          {/* Last Order */}
           <div className="lg:col-span-1">
             <Card className="h-full flex flex-col">
               <h3 className="font-bold text-gray-800 mb-4">Pesanan Terakhir</h3>
-
               {loading ? (
                 <Loading />
               ) : lastActiveOrder ? (
@@ -448,7 +327,6 @@ const CustomerDashboard = () => {
                         #{lastActiveOrder.order_id.split("-")[1]}
                       </p>
                     </div>
-
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Status</span>
                       <span
@@ -463,7 +341,6 @@ const CustomerDashboard = () => {
                         {getDeliveryStatusLabel(lastActiveOrder)}
                       </span>
                     </div>
-
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Total</span>
                       <span className="font-bold text-primary-600">
@@ -471,7 +348,6 @@ const CustomerDashboard = () => {
                       </span>
                     </div>
                   </div>
-
                   <Button
                     className="w-full mt-6"
                     variant="outline"

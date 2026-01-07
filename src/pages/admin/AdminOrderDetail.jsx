@@ -5,6 +5,7 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Loading from "../../components/ui/Loading";
+import Alert from "../../components/ui/Alert";
 import { formatCurrency } from "../../utils/helpers";
 
 const AdminOrderDetail = () => {
@@ -12,6 +13,7 @@ const AdminOrderDetail = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
     if (orderId) {
@@ -28,6 +30,10 @@ const AdminOrderDetail = () => {
       }
     } catch (error) {
       console.error("Error:", error);
+      setAlert({
+        type: "error",
+        message: "Gagal mengambil data pesanan.",
+      });
     } finally {
       setLoading(false);
     }
@@ -36,13 +42,14 @@ const AdminOrderDetail = () => {
   const handleCopyId = () => {
     if (order && order.order_id) {
       navigator.clipboard.writeText(order.order_id);
-      alert("Order ID berhasil disalin!");
+      setAlert({
+        type: "success",
+        message: "Order ID berhasil disalin ke clipboard!",
+      });
     }
   };
 
-  // --- LOGIKA WARNA DISAMAKAN DENGAN DAFTAR PESANAN ---
   const getDeliveryStatusText = (orderData) => {
-    // Cek Payment dulu
     if (orderData.status === "PENDING") {
       return { label: "Menunggu Bayar", color: "gray" };
     }
@@ -56,11 +63,10 @@ const AdminOrderDetail = () => {
       return { label: "Diterima Customer", color: "green" };
     if (status === "ON_THE_ROAD" || status === "ON_DELIVERY")
       return { label: "Sedang Diantar", color: "blue" };
-    if (status === "READY") return { label: "Siap Dikirim", color: "yellow" }; // Kuning
+    if (status === "READY") return { label: "Siap Dikirim", color: "yellow" };
 
-    // Jika sudah bayar tapi belum ada data pengiriman -> Perlu Diproses
     if (orderData.status === "SUCCESS") {
-      return { label: "Perlu Diproses", color: "yellow" }; // Kuning
+      return { label: "Perlu Diproses", color: "yellow" };
     }
 
     return { label: "Belum Diproses", color: "gray" };
@@ -85,6 +91,13 @@ const AdminOrderDetail = () => {
 
   return (
     <DashboardLayout>
+      {alert && (
+        <Alert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -174,18 +187,15 @@ const AdminOrderDetail = () => {
               </div>
             </Card>
 
-            {/* --- BAGIAN INI DIUBAH AGAR DINAMIS MENGIKUTI WARNA STATUS --- */}
             <Card className={`border-l-4 border-${statusInfo.color}-500`}>
               <h3 className="font-bold text-gray-900 mb-4">Aksi Pengiriman</h3>
               <div className={`p-4 bg-${statusInfo.color}-50 rounded mb-4`}>
                 <p className="text-sm text-gray-600">Status Saat Ini:</p>
-                {/* Text warna dinamis */}
                 <p className={`font-bold text-${statusInfo.color}-700 text-lg`}>
                   {statusInfo.label}
                 </p>
               </div>
             </Card>
-            {/* ------------------------------------------------------------- */}
           </div>
 
           <div className="space-y-6">

@@ -21,9 +21,6 @@ const AdminOrders = () => {
       setLoading(true);
       const response = await salesService.getAll();
 
-      // Debugging: Cek di console browser apakah ada data 'user' di dalam order
-      console.log("Response API:", response);
-
       if (
         response.status &&
         response.data &&
@@ -94,7 +91,6 @@ const AdminOrders = () => {
                     <th className="text-left py-3 px-4 font-semibold">
                       Order ID
                     </th>
-                    {/* 1. UBAH HEADER DARI 'User ID' KE 'Nama Customer' */}
                     <th className="text-left py-3 px-4 font-semibold">
                       Nama Customer
                     </th>
@@ -124,9 +120,7 @@ const AdminOrders = () => {
                           #{order.order_id.split("-")[1]}
                         </td>
 
-                        {/* 2. UBAH ISI KOLOM MENJADI NAMA USER */}
                         <td className="py-3 px-4 text-sm text-gray-900">
-                          {/* Cek apakah objek user ada. Jika ada tampilkan nama, jika tidak tampilkan email atau ID */}
                           {order.user ? (
                             <div className="flex flex-col">
                               <span className="font-semibold">

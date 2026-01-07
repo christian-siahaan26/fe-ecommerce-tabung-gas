@@ -4,6 +4,8 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Loading from "../../components/ui/Loading";
+import Alert from "../../components/ui/Alert";
+import ConfirmationModal from "../../components/ui/ConfirmationModal";
 
 const AdminDrivers = () => {
   const [drivers, setDrivers] = useState([]);
@@ -11,13 +13,17 @@ const AdminDrivers = () => {
 
   // --- STATE MODAL & FORM ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create"); // 'create' | 'edit'
-  const [selectedId, setSelectedId] = useState(null); // ID user yang sedang diedit
+  const [modalMode, setModalMode] = useState("create");
+  const [selectedId, setSelectedId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  // --- STATE ALERT ---
+  const [alert, setAlert] = useState(null);
 
   // --- STATE DELETE ---
-  const [deletingId, setDeletingId] = useState(null); // ID user yang sedang dihapus
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [driverToDelete, setDriverToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -51,9 +57,6 @@ const AdminDrivers = () => {
     }
   };
 
-  // --- HANDLERS ---
-
-  // 1. Buka Modal untuk TAMBAH
   const handleOpenCreate = () => {
     setModalMode("create");
     setSelectedId(null);
@@ -64,11 +67,10 @@ const AdminDrivers = () => {
       phone: "",
       addres: "",
     });
-    setError("");
+    setAlert(null);
     setIsModalOpen(true);
   };
 
-  // 2. Buka Modal untuk EDIT
   const handleOpenEdit = (driver) => {
     setModalMode("edit");
     setSelectedId(driver.user_id);
@@ -79,50 +81,54 @@ const AdminDrivers = () => {
       phone: driver.phone || "",
       addres: driver.addres || "",
     });
-    setError("");
+    setAlert(null);
     setIsModalOpen(true);
   };
 
-  // 3. Logic HAPUS (BARU)
-  const handleDelete = async (driver) => {
-    // Konfirmasi User
-    const confirmMsg = `Apakah Anda yakin ingin menghapus driver "${driver.name}"?\nData tidak bisa dikembalikan.`;
-    if (!window.confirm(confirmMsg)) return;
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    setDeletingId(driver.user_id); // Nyalakan loading di tombol hapus
+  const confirmDelete = (driver) => {
+    setDriverToDelete(driver);
+    setDeleteModalOpen(true);
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!driverToDelete) return;
+
+    setIsDeleting(true);
 
     try {
-      // Pastikan nama function ini sesuai dengan yang Anda buat di authService (misal: deleteUser)
-      const response = await authService.deleteUser(driver.user_id);
+      const response = await authService.deleteUser(driverToDelete.user_id);
 
-      // Cek respon (bisa status 204 atau status: true tergantung backend)
-      // Biasanya delete sukses jika tidak error / throw
       if (response.status === 204 || response.status === 200 || response.data) {
-        alert("✅ Driver berhasil dihapus.");
-
-        // Update UI secara langsung (filter array) agar tidak perlu reload
-        setDrivers((prev) => prev.filter((d) => d.user_id !== driver.user_id));
+        setAlert({
+          type: "success",
+          message: `Driver "${driverToDelete.name}" berhasil dihapus.`,
+        });
+        setDrivers((prev) =>
+          prev.filter((d) => d.user_id !== driverToDelete.user_id)
+        );
       }
     } catch (err) {
       console.error("Gagal menghapus:", err);
       const msg = err.response?.data?.message || "Gagal menghapus driver.";
-      alert(`❌ Error: ${msg}`);
+      setAlert({
+        type: "error",
+        message: `Error: ${msg}`,
+      });
     } finally {
-      setDeletingId(null); // Matikan loading
+      setIsDeleting(false);
+      setDeleteModalOpen(false);
+      setDriverToDelete(null);
     }
-  };
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitLoading(true);
-    setError("");
+    setAlert(null);
 
     try {
       let response;
@@ -133,16 +139,17 @@ const AdminDrivers = () => {
           email: formData.email,
           password: formData.password,
           role: "COURIR",
-          addres: formData.addres,
           phone: formData.phone,
+          addres: formData.addres,
         };
+
         response = await authService.register(payload);
       } else {
         const payload = {
           name: formData.name,
           email: formData.email,
-          addres: formData.addres,
           phone: formData.phone,
+          addres: formData.addres,
         };
 
         if (formData.password && formData.password.trim() !== "") {
@@ -153,19 +160,27 @@ const AdminDrivers = () => {
       }
 
       if (response.status) {
-        alert(
-          modalMode === "create"
-            ? "Driver berhasil ditambahkan!"
-            : "Data driver berhasil diperbarui!"
-        );
+        setAlert({
+          type: "success",
+          message:
+            modalMode === "create"
+              ? "Driver berhasil ditambahkan!"
+              : "Data driver diperbarui!",
+        });
         setIsModalOpen(false);
         fetchDrivers();
       } else {
-        setError(response.message || "Gagal menyimpan data");
+        setAlert({
+          type: "error",
+          message: response.message || "Gagal menyimpan data",
+        });
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Terjadi kesalahan sistem");
+      setAlert({
+        type: "error",
+        message: err.response?.data?.message || "Terjadi kesalahan sistem",
+      });
     } finally {
       setSubmitLoading(false);
     }
@@ -173,6 +188,23 @@ const AdminDrivers = () => {
 
   return (
     <DashboardLayout>
+      {alert && (
+        <Alert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleExecuteDelete}
+        title="Hapus Driver?"
+        message={`Apakah Anda yakin ingin menghapus driver "${driverToDelete?.name}"? Data yang dihapus tidak dapat dikembalikan.`}
+        isLoading={isDeleting}
+      />
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
           Data Pengantar (Kurir)
@@ -190,13 +222,10 @@ const AdminDrivers = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {drivers.map((driver) => (
             <Card key={driver.user_id} className="relative group">
-              {/* --- AREA TOMBOL AKSI (EDIT & DELETE) --- */}
               <div className="absolute top-4 right-4 flex space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                {/* Tombol Edit */}
                 <button
                   onClick={() => handleOpenEdit(driver)}
                   className="p-2 bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-full transition-colors"
-                  title="Edit Data"
                 >
                   <svg
                     className="w-4 h-4"
@@ -212,55 +241,26 @@ const AdminDrivers = () => {
                     />
                   </svg>
                 </button>
-
-                {/* Tombol Delete (BARU) */}
                 <button
-                  onClick={() => handleDelete(driver)}
-                  disabled={deletingId === driver.user_id}
-                  className={`p-2 rounded-full transition-colors ${
-                    deletingId === driver.user_id
-                      ? "bg-red-50 text-red-400 cursor-not-allowed"
-                      : "bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600"
-                  }`}
-                  title="Hapus Driver"
+                  onClick={() => confirmDelete(driver)}
+                  className="p-2 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-full transition-colors"
                 >
-                  {deletingId === driver.user_id ? (
-                    // Icon Loading sederhana saat menghapus
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      ></path>
-                    </svg>
-                  ) : (
-                    // Icon Sampah (Trash)
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  )}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
                 </button>
               </div>
 
-              {/* Konten Card (Sama seperti sebelumnya) */}
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
                   <svg
@@ -278,17 +278,10 @@ const AdminDrivers = () => {
                   </svg>
                 </div>
                 <div className="overflow-hidden pr-20">
-                  {/* pr-20 ditambah supaya teks tidak nabrak tombol aksi */}
-                  <h3
-                    className="font-bold text-gray-900 truncate"
-                    title={driver.name}
-                  >
+                  <h3 className="font-bold text-gray-900 truncate">
                     {driver.name}
                   </h3>
-                  <p
-                    className="text-sm text-gray-500 truncate"
-                    title={driver.email}
-                  >
+                  <p className="text-sm text-gray-500 truncate">
                     {driver.email}
                   </p>
                 </div>
@@ -314,7 +307,6 @@ const AdminDrivers = () => {
         </div>
       )}
 
-      {/* --- MODAL (DINAMIS CREATE / EDIT) SAMA SEPERTI SEBELUMNYA --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 overflow-y-auto max-h-[90vh]">
@@ -322,14 +314,7 @@ const AdminDrivers = () => {
               {modalMode === "create" ? "Tambah Driver Baru" : "Edit Driver"}
             </h2>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-                {error}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Nama */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nama Lengkap
@@ -344,7 +329,6 @@ const AdminDrivers = () => {
                 />
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -359,7 +343,6 @@ const AdminDrivers = () => {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password{" "}
@@ -383,7 +366,6 @@ const AdminDrivers = () => {
                 />
               </div>
 
-              {/* No HP */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   No. HP
@@ -398,7 +380,6 @@ const AdminDrivers = () => {
                 />
               </div>
 
-              {/* Alamat */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Alamat Domisili

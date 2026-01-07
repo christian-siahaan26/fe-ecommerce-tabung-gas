@@ -1,20 +1,11 @@
 import { useState, useEffect } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend, // 1. Jangan lupa import Legend
-} from "recharts";
 import { salesService, deliveryService } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import Card from "../../components/ui/Card";
 import Loading from "../../components/ui/Loading";
 import { formatCurrency } from "../../utils/helpers";
+import DualAxisBarChart from "../../components/charts/DualAxisBarChart";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -68,7 +59,6 @@ const AdminDashboard = () => {
       const sales = getArrayData(salesResponse);
       const deliveries = getArrayData(deliveriesResponse);
 
-      // Logika Statistik
       const totalSalesCount = sales.length;
       const paidOrders = sales.filter((s) => s.status === "SUCCESS");
       setAllPaidOrders(paidOrders);
@@ -134,11 +124,10 @@ const AdminDashboard = () => {
       "Des",
     ];
 
-    // 2. Inisialisasi Revenue (0) DAN Count (0)
     const monthlyData = months.map((month) => ({
       name: month,
       revenue: 0,
-      count: 0, // Field baru untuk jumlah transaksi
+      count: 0,
     }));
 
     const filteredOrders = orders.filter((order) => {
@@ -152,7 +141,7 @@ const AdminDashboard = () => {
 
       if (monthlyData[monthIndex]) {
         monthlyData[monthIndex].revenue += order.total_amount;
-        monthlyData[monthIndex].count += 1; // 3. Tambah jumlah transaksi
+        monthlyData[monthIndex].count += 1;
       }
     });
 
@@ -300,129 +289,19 @@ const AdminDashboard = () => {
         {/* --- BAGIAN GRAFIK --- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-3">
-            <Card className="h-full">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h3 className="font-bold text-gray-800 text-lg">
-                  Grafik Performa Bulanan ({selectedYear})
-                </h3>
-
-                <div className="flex items-center gap-2">
-                  <label htmlFor="yearFilter" className="text-sm text-gray-600">
-                    Tahun:
-                  </label>
-                  <select
-                    id="yearFilter"
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                    className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-primary-500 focus:border-primary-500 outline-none"
-                  >
-                    {availableYears.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {chartData.length > 0 ? (
-                <div className="h-96 w-full">
-                  {" "}
-                  {/* Height diperbesar sedikit */}
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 10, right: 30, left: 10, bottom: 20 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="#E5E7EB"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#6B7280" }}
-                        dy={10}
-                      />
-
-                      {/* 4. SUMBU Y KIRI (PENDAPATAN) */}
-                      <YAxis
-                        yAxisId="left"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#4F46E5", fontSize: 12 }} // Warna Biru
-                        tickFormatter={(value) =>
-                          value === 0 ? "0" : `${value / 1000}k`
-                        }
-                      />
-
-                      {/* 5. SUMBU Y KANAN (JUMLAH TRANSAKSI) */}
-                      <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: "#F59E0B", fontSize: 12 }} // Warna Orange
-                        tickFormatter={(value) => value} // Tampilkan angka bulat
-                      />
-
-                      <Tooltip
-                        cursor={{ fill: "#F3F4F6" }}
-                        formatter={(value, name) => {
-                          if (name === "revenue")
-                            return [formatCurrency(value), "Pendapatan"];
-                          if (name === "count")
-                            return [`${value} Transaksi`, "Jumlah Order"];
-                          return [value, name];
-                        }}
-                        contentStyle={{
-                          borderRadius: "8px",
-                          border: "none",
-                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                        }}
-                      />
-
-                      {/* 6. LEGENDA WARNA */}
-                      <Legend
-                        verticalAlign="top"
-                        height={36}
-                        formatter={(value) => {
-                          return value === "revenue"
-                            ? "Pendapatan (Rp)"
-                            : "Jumlah Order (Qty)";
-                        }}
-                      />
-
-                      {/* 7. BAR BIRU (PENDAPATAN) */}
-                      <Bar
-                        yAxisId="left"
-                        dataKey="revenue"
-                        fill="#4F46E5" // Biru
-                        radius={[4, 4, 0, 0]}
-                        barSize={30}
-                        name="revenue"
-                      />
-
-                      {/* 8. BAR ORANGE (JUMLAH ORDER) */}
-                      <Bar
-                        yAxisId="right"
-                        dataKey="count"
-                        fill="#F59E0B" // Orange
-                        radius={[4, 4, 0, 0]}
-                        barSize={30}
-                        name="count"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-lg">
-                  <p>Tidak ada data.</p>
-                </div>
-              )}
-            </Card>
+            <DualAxisBarChart
+              title="Grafik Performa Penjualan"
+              data={chartData}
+              year={selectedYear}
+              years={availableYears}
+              onYearChange={setSelectedYear}
+              bar1Key="revenue"
+              bar1Label="Pendapatan"
+              bar1Color="#4F46E5"
+              bar2Key="count"
+              bar2Label="Jumlah Order"
+              bar2Color="#F59E0B"
+            />
           </div>
         </div>
       </div>

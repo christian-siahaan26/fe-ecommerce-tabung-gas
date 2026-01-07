@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Konsisten menggunakan key "token"
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
@@ -40,24 +39,17 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.register(userData);
 
       if (response.status && response.data) {
-        // Ambil token dan data user
         const { accessToken, refreshToken, ...userInfo } = response.data;
 
-        // --- PERBAIKAN 1: Tambahkan Role Default ---
-        // Backend register biasanya belum mengirim role di body response, 
-        // jadi kita paksa tambahkan role CUSTOMER agar ProtectedRoute mengizinkan masuk.
         const userWithRole = {
           ...userInfo,
-          role: userInfo.role || "CUSTOMER", 
+          role: userInfo.role || "CUSTOMER",
         };
 
-        // --- PERBAIKAN 2: Samakan Key Token ---
-        // Ganti "accessToken" menjadi "token" agar sesuai dengan api.js dan fungsi login
-        localStorage.setItem("token", accessToken); 
-        localStorage.setItem("refreshToken", refreshToken); // Opsional
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
         localStorage.setItem("user", JSON.stringify(userWithRole));
 
-        // Update State
         setToken(accessToken);
         setUser(userWithRole);
         setIsAuthenticated(true);
@@ -80,13 +72,11 @@ export const AuthProvider = ({ children }) => {
       if (response.status === true && response.data) {
         const { accessToken, userData } = response.data;
 
-        // Pastikan role ada saat login juga (Normalisasi huruf besar)
         const finalUser = {
-            ...userData,
-            role: (userData.role || "CUSTOMER").toUpperCase()
+          ...userData,
+          role: (userData.role || "CUSTOMER").toUpperCase(),
         };
 
-        // Konsisten menggunakan key "token"
         localStorage.setItem("token", accessToken);
         localStorage.setItem("user", JSON.stringify(finalUser));
 
@@ -113,7 +103,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    localStorage.removeItem("refreshToken"); // Hapus juga refresh token jika ada
+    localStorage.removeItem("refreshToken");
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);

@@ -38,7 +38,6 @@ const Sidebar = ({ isOpen, onClose }) => {
   };
 
   const getIcon = (iconName) => {
-    // ... (kode icon tetap sama, saya singkat agar fokus ke perubahan)
     const icons = {
       home: (
         <path
@@ -120,7 +119,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Overlay Gelap (Mobile Only) - Tidak berubah */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity md:hidden ${
           isOpen ? "opacity-100 visible" : "opacity-0 invisible"
@@ -144,8 +142,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         `}
       >
         {/* BAGIAN ATAS: Header + Menu */}
-        {/* 'overflow-y-auto' di sini penting! Jika menu lebih panjang dari layar, 
-             hanya bagian dalam sidebar yang discroll, bukan seluruh halaman */}
         <div className="p-6 flex-1 overflow-y-auto">
           {/* Header Sidebar */}
           <div className="mb-8 flex justify-between items-start">

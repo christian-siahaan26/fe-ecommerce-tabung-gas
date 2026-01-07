@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { deliveryService, authService } from "../../services/api"; // Import authService
+import { deliveryService, authService } from "../../services/api";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
@@ -8,10 +8,9 @@ import { formatDate } from "../../utils/helpers";
 
 const AdminDeliveries = () => {
   const [deliveries, setDeliveries] = useState([]);
-  const [couriers, setCouriers] = useState([]); // State untuk data kurir
+  const [couriers, setCouriers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // State Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     order_id: "",
@@ -28,13 +27,11 @@ const AdminDeliveries = () => {
     try {
       setLoading(true);
 
-      // Fetch Deliveries & Courirs secara bersamaan
       const [deliveriesRes, courirsRes] = await Promise.all([
         deliveryService.getAll(),
         authService.getCourirs(),
       ]);
 
-      // 1. Handle Data Deliveries
       if (
         deliveriesRes.status &&
         deliveriesRes.data &&
@@ -45,8 +42,6 @@ const AdminDeliveries = () => {
         setDeliveries(deliveriesRes.data);
       }
 
-      // 2. Handle Data Courirs
-      console.log("Courirs Response:", courirsRes); // Debugging
       if (
         courirsRes.status &&
         courirsRes.data &&
@@ -87,7 +82,7 @@ const AdminDeliveries = () => {
       if (response.status) {
         setIsModalOpen(false);
         setFormData({ order_id: "", courir_name: "" });
-        fetchData(); // Refresh data
+        fetchData();
         alert("Pengiriman berhasil dibuat!");
       } else {
         setError(response.message || "Gagal membuat pengiriman");
@@ -100,7 +95,6 @@ const AdminDeliveries = () => {
     }
   };
 
-  // Helper Warna Status (Sama seperti sebelumnya)
   const getStatusBadge = (status) => {
     const s = (status || "").toUpperCase();
     let colorClass = "bg-gray-100 text-gray-800";

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://ecommerce-tabung-gas.vercel.app";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor untuk menambahkan token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -48,16 +47,7 @@ export const authService = {
 
   register: async (userData) => {
     try {
-      // Mapping data form ke format API (perhatikan 'addres')
-      const payload = {
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        phone: userData.phone,
-        addres: userData.address, // API minta 'addres' (typo di backend), frontend pakai 'address'
-      };
-
-      const response = await api.post("/auth/register", payload);
+      const response = await api.post("/auth/register", userData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

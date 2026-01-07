@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// Pastikan service ini mengarah ke endpoint POST /orders
 import { salesService } from "../../services/api";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import Card from "../../components/ui/Card";
@@ -8,13 +7,12 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import { formatCurrency } from "../../utils/helpers";
 
-const PRICE_PER_UNIT = 20000; // Rp 20.000 per tabung
-const PRODUCT_ID = "cmieed8ul0000llezcr4lm4qt"; // ID Produk Gas 3Kg
+const PRICE_PER_UNIT = 20000;
+const PRODUCT_ID = "cmieed8ul0000llezcr4lm4qt";
 
 const CustomerBuy = () => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
-  // State address dihapus karena mengambil data dari database user
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,8 +27,6 @@ const CustomerBuy = () => {
   };
 
   const handleBuy = async () => {
-    // Validasi alamat dihapus
-
     if (quantity < 1) {
       setError("Jumlah minimal 1 tabung");
       return;
@@ -40,7 +36,6 @@ const CustomerBuy = () => {
     setError("");
 
     try {
-      // Structure Payload sesuai request: { "items": [...] }
       const orderPayload = {
         items: [
           {
@@ -48,21 +43,17 @@ const CustomerBuy = () => {
             quantity: parseInt(quantity),
           },
         ],
-        // Address tidak dikirim dari sini
       };
 
       const response = await salesService.create(orderPayload);
 
-      // Cek respon sesuai struktur yang kamu berikan
       if (response.status && response.data?.midtrans?.token) {
-        // Token ada di response.data.midtrans.token
         const snapToken = response.data.midtrans.token;
 
-        // Load Midtrans Snap
         window.snap.pay(snapToken, {
           onSuccess: function (result) {
             console.log("Payment success:", result);
-            // Redirect ke Dashboard setelah sukses
+            sukses;
             navigate(`/customer/dashboard`);
           },
           onPending: function (result) {
@@ -140,7 +131,7 @@ const CustomerBuy = () => {
               required
             />
 
-            {/* Input Alamat TELAH DIHAPUS */}
+            {/* Input Alamat */}
             <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
               <span className="font-semibold text-blue-700">
                 Info Pengiriman:

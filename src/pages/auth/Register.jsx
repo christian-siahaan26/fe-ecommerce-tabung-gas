@@ -7,14 +7,14 @@ import Card from "../../components/ui/Card";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register } = useAuth(); // Menggunakan fungsi register dari context
+  const { register } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     phone: "",
-    address: "",
+    addres: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -39,7 +39,7 @@ const Register = () => {
       newErrors.password = "Password minimal 6 karakter";
 
     if (!formData.phone) newErrors.phone = "Nomor HP harus diisi";
-    if (!formData.address) newErrors.address = "Alamat harus diisi";
+    if (!formData.addres) newErrors.addres = "Alamat harus diisi";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -57,8 +57,6 @@ const Register = () => {
       const result = await register(formData);
 
       if (result.success) {
-        // Jika sukses, user otomatis login (karena context diupdate)
-        // Redirect ke dashboard customer
         navigate("/customer/dashboard");
       } else {
         setErrorMessage(result.message || "Registrasi gagal.");
@@ -139,26 +137,25 @@ const Register = () => {
               error={errors.phone}
             />
 
-            {/* Menggunakan Input component biasa atau Textarea jika punya */}
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700">
                 Alamat Lengkap
               </label>
               <textarea
-                name="address"
-                value={formData.address}
+                name="addres"
+                value={formData.addres}
                 onChange={handleChange}
                 rows="3"
                 className={`w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary-500 outline-none transition
                   ${
-                    errors.address
+                    errors.addres
                       ? "border-red-500 focus:ring-red-200"
                       : "border-gray-300"
                   }`}
                 placeholder="Nama jalan, nomor rumah, kelurahan..."
               />
-              {errors.address && (
-                <span className="text-xs text-red-500">{errors.address}</span>
+              {errors.addres && (
+                <span className="text-xs text-red-500">{errors.addres}</span>
               )}
             </div>
 

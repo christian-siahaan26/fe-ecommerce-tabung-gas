@@ -13,7 +13,7 @@ import Register from "../pages/auth/Register";
 // Customer Pages
 import CustomerDashboard from "../pages/customer/Dashboard";
 import CustomerBuy from "../pages/customer/Buy";
-import CustomerOrders from "../pages/customer/Orders"; // Pastikan Anda sudah membuat file ini sesuai langkah sebelumnya
+import CustomerOrders from "../pages/customer/Orders";
 import CustomerOrderDetail from "../pages/customer/CustomerOrderDetail";
 
 // Driver Pages
@@ -22,12 +22,9 @@ import DriverTasks from "../pages/driver/Tasks";
 
 // Owner Pages (placeholder)
 import OwnerDashboard from "../pages/owner/Dashboard";
-// Jangan lupa import halaman Owner lainnya jika ada (Sales, Admins)
 
 // Admin Pages
 import AdminDashboard from "../pages/admin/Dashboard";
-// --- 1. IMPORT HALAMAN ADMIN BARU DI SINI ---
-// Pastikan file-file ini SUDAH DIBUAT di folder pages/admin
 import AdminOrders from "../pages/admin/Orders";
 import AdminOrderDetail from "../pages/admin/AdminOrderDetail";
 import AdminDeliveries from "../pages/admin/Deliveries";
@@ -64,13 +61,11 @@ const AppRoutes = () => {
         path="/customer/orders"
         element={
           <ProtectedRoute allowedRoles={["CUSTOMER"]}>
-            {/* Perbaikan: Gunakan komponen CustomerOrders, bukan Dashboard lagi */}
             <CustomerOrders />
           </ProtectedRoute>
         }
       />
 
-      {/* TAMBAHKAN ROUTE UNTUK DETAIL ORDER */}
       <Route
         path="/customer/orders/:orderId"
         element={<CustomerOrderDetail />}
@@ -94,7 +89,7 @@ const AppRoutes = () => {
         }
       />
 
-      {/* --- 2. TAMBAHKAN ROUTE ADMIN DI SINI --- */}
+      {/* --- ADMIN ROUTES --- */}
       <Route
         path="/admin/dashboard"
         element={
@@ -138,7 +133,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      {/* Jangan lupa daftarkan route Owner lainnya di sini juga (sales, admins) */}
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />

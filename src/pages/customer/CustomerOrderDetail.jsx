@@ -124,9 +124,8 @@ const CustomerOrderDetail = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Bagian Kiri: Informasi Utama (2/3 lebar) */}
           <div className="md:col-span-2 space-y-6">
-            {/* 1. Card Status & Info Dasar */}
+            {/* Card Status & Info Dasar */}
             <Card>
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -163,7 +162,7 @@ const CustomerOrderDetail = () => {
               )}
             </Card>
 
-            {/* 2. Card Item Produk (DIPERBARUI) */}
+            {/* Card Item Produk */}
             <Card>
               <h3 className="font-bold text-gray-900 mb-4">Rincian Produk</h3>
               {!order.order_items || order.order_items.length === 0 ? (
@@ -175,7 +174,6 @@ const CustomerOrderDetail = () => {
                   {order.order_items.map((item, index) => (
                     <div
                       key={index}
-                      // Ubah layout menjadi items-start agar deskripsi panjang tidak merusak layout
                       className="flex justify-between items-start border-b last:border-0 pb-4 last:pb-0"
                     >
                       <div className="flex gap-4">
@@ -193,7 +191,7 @@ const CustomerOrderDetail = () => {
                             {item.quantity} x {formatCurrency(item.price)}
                           </p>
 
-                          {/* --- MENAMPILKAN DESKRIPSI DISINI --- */}
+                          {/* --- DESKRIPSI --- */}
                           {item.product?.description && (
                             <p className="text-xs text-gray-500 mt-1 italic max-w-md">
                               "{item.product.description}"
@@ -213,7 +211,6 @@ const CustomerOrderDetail = () => {
             </Card>
           </div>
 
-          {/* Bagian Kanan: Info Pengiriman & Ringkasan (1/3 lebar) */}
           <div className="space-y-6">
             <Card>
               <h3 className="font-bold text-gray-900 mb-4">
