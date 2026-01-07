@@ -19,6 +19,9 @@ const DriverTasks = () => {
   const [targetTask, setTargetTask] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     fetchTasks();
   }, [user]);
@@ -26,7 +29,7 @@ const DriverTasks = () => {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const response = await deliveryService.getAll();
+      const response = await deliveryService.getAll({ limit: 1000 });
 
       let allTasks = [];
       if (
@@ -42,11 +45,32 @@ const DriverTasks = () => {
       const myTasks = allTasks.filter(
         (t) => t.courir_name?.toLowerCase() === user?.name?.toLowerCase()
       );
+
       setTasks(myTasks);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- LOGIC PAGINATION (POTONG DATA) ---
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTasks = tasks.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(tasks.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+      window.scrollTo(0, 0);
     }
   };
 
@@ -128,16 +152,6 @@ const DriverTasks = () => {
     window.open(`https://wa.me/${formatted}`, "_blank");
   };
 
-  // const openMaps = (address) => {
-  //   if (!address) return;
-  //   window.open(
-  //     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-  //       address
-  //     )}`,
-  //     "_blank"
-  //   );
-  // };
-
   return (
     <DashboardLayout>
       {alert && (
@@ -165,7 +179,14 @@ const DriverTasks = () => {
         }
       />
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">Tugas Pengantaran</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Tugas Pengantaran
+          </h1>
+          <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded shadow-sm border">
+            Total Tugas: <b>{tasks.length}</b>
+          </span>
+        </div>
 
         {loading ? (
           <Loading />
@@ -176,136 +197,155 @@ const DriverTasks = () => {
             </div>
           </Card>
         ) : (
-          <div className="grid gap-6">
-            {tasks.map((task) => {
-              const status = (task.delivery_status || "").toUpperCase();
+          <div className="space-y-6">
+            <div className="grid gap-6">
+              {currentTasks.map((task) => {
+                const status = (task.delivery_status || "").toUpperCase();
+                const customer = task.order?.user;
 
-              const customer = task.order?.user;
-
-              return (
-                <Card
-                  key={task.delivery_id}
-                  className="border-l-4 border-primary-500"
-                >
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-4 md:space-y-0">
-                    {/* Info Kiri */}
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="text-lg font-bold text-gray-900">
-                          #{task.delivery_id.substring(0, 8)}...
-                        </span>
-                        {getStatusBadge(status)}
-                      </div>
-
-                      <div className="space-y-1 text-sm text-gray-600 mb-4">
-                        <p>
-                          <span className="font-medium">Order ID:</span>{" "}
-                          <span className="font-mono text-blue-600">
-                            {task.order_id}
+                return (
+                  <Card
+                    key={task.delivery_id}
+                    className="border-l-4 border-primary-500"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-4 md:space-y-0">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="text-lg font-bold text-gray-900">
+                            #{task.delivery_id.substring(0, 8)}...
                           </span>
-                        </p>
-                        <p>
-                          <span className="font-medium">Tanggal:</span>{" "}
-                          {formatDate(task.created_at)}
-                        </p>
-                      </div>
+                          {getStatusBadge(status)}
+                        </div>
 
-                      {/* ---TAMPILAN DATA CUSTOMER (ALAMAT & HP) --- */}
-                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 max-w-md">
-                        <p className="text-xs text-gray-500 font-bold uppercase mb-2">
-                          Info Penerima (Customer)
-                        </p>
-
-                        {customer ? (
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-start gap-2">
-                              <span className="text-gray-400 mt-0.5">👤</span>
-                              <span className="font-medium text-gray-900">
-                                {customer.name}
-                              </span>
-                            </div>
-
-                            <div className="flex items-start gap-2">
-                              <span className="text-gray-400 mt-0.5">📍</span>
-                              <div className="flex-1">
-                                <span className="text-gray-700 block mb-1">
-                                  {customer.addres || "Alamat tidak tersedia"}
-                                </span>
-                                {/* Tombol Maps Kecil
-                                {customer.addres && (
-                                  <button
-                                    onClick={() => openMaps(customer.addres)}
-                                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                                  >
-                                    Lihat di Peta ↗
-                                  </button>
-                                )} */}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-400">📞</span>
-                              <span className="text-gray-700 font-mono">
-                                {customer.phone || "-"}
-                              </span>
-
-                              {customer.phone && (
-                                <button
-                                  onClick={() => openWhatsApp(customer.phone)}
-                                  className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200"
-                                >
-                                  Chat WA
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-red-500 text-sm italic">
-                            Data customer tidak ditemukan. <br />
-                            <span className="text-xs text-gray-400">
-                              (Pastikan Backend sudah include order.user)
+                        <div className="space-y-1 text-sm text-gray-600 mb-4">
+                          <p>
+                            <span className="font-medium">Order ID:</span>{" "}
+                            <span className="font-mono text-blue-600">
+                              {task.order_id}
                             </span>
                           </p>
+                          <p>
+                            <span className="font-medium">Tanggal:</span>{" "}
+                            {formatDate(task.created_at)}
+                          </p>
+                        </div>
+
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 max-w-md">
+                          <p className="text-xs text-gray-500 font-bold uppercase mb-2">
+                            Info Penerima (Customer)
+                          </p>
+
+                          {customer ? (
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-start gap-2">
+                                <span className="text-gray-400 mt-0.5">👤</span>
+                                <span className="font-medium text-gray-900">
+                                  {customer.name}
+                                </span>
+                              </div>
+
+                              <div className="flex items-start gap-2">
+                                <span className="text-gray-400 mt-0.5">📍</span>
+                                <div className="flex-1">
+                                  <span className="text-gray-700 block mb-1">
+                                    {customer.addres || "Alamat tidak tersedia"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400">📞</span>
+                                <span className="text-gray-700 font-mono">
+                                  {customer.phone || "-"}
+                                </span>
+
+                                {customer.phone && (
+                                  <button
+                                    onClick={() => openWhatsApp(customer.phone)}
+                                    className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200"
+                                  >
+                                    Chat WA
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-red-500 text-sm italic">
+                              Data customer tidak ditemukan.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 min-w-[140px] mt-4 md:mt-0">
+                        {status === "READY" && (
+                          <Button
+                            onClick={() =>
+                              confirmUpdateStatus(
+                                task.delivery_id,
+                                "ON_THE_ROAD"
+                              )
+                            }
+                          >
+                            🚀 Mulai Jalan
+                          </Button>
+                        )}
+
+                        {(status === "ON_THE_ROAD" ||
+                          status === "ON_DELIVERY") && (
+                          <Button
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() =>
+                              confirmUpdateStatus(task.delivery_id, "SENT")
+                            }
+                            loading={updatingId === task.delivery_id}
+                          >
+                            ✅ Selesai
+                          </Button>
+                        )}
+
+                        {status === "SENT" && (
+                          <div className="text-center p-2 bg-gray-50 rounded">
+                            <span className="text-sm font-bold text-gray-400">
+                              Tugas Selesai
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
+                  </Card>
+                );
+              })}
+            </div>
 
-                    {/* Tombol Aksi Kanan (Status) */}
-                    <div className="flex flex-col gap-2 min-w-[140px] mt-4 md:mt-0">
-                      {status === "READY" && (
-                        <Button
-                          onClick={() =>
-                            confirmUpdateStatus(task.delivery_id, "ON_THE_ROAD")
-                          }
-                        >
-                          🚀 Mulai Jalan
-                        </Button>
-                      )}
+            {tasks.length > 0 && (
+              <div className="flex items-center justify-between pt-4 mt-4 px-2">
+                <div className="text-sm text-gray-700">
+                  Halaman <span className="font-bold">{currentPage}</span> dari{" "}
+                  <span className="font-bold">{totalPages || 1}</span>
+                </div>
 
-                      {(status === "ON_THE_ROAD" ||
-                        status === "ON_DELIVERY") && (
-                        <Button
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() =>
-                            confirmUpdateStatus(task.delivery_id, "SENT")
-                          }
-                        >
-                          ✅ Selesai
-                        </Button>
-                      )}
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    &larr; Sebelumnya
+                  </Button>
 
-                      {status === "SENT" && (
-                        <div className="text-center p-2 bg-gray-50 rounded">
-                          <span className="text-sm font-bold text-gray-400">
-                            Tugas Selesai
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Selanjutnya &rarr;
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
