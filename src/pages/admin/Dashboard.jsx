@@ -44,8 +44,8 @@ const AdminDashboard = () => {
       setLoading(true);
 
       const [salesResponse, deliveriesResponse] = await Promise.all([
-        salesService.getAll(),
-        deliveryService.getAll(),
+        salesService.getAll({ page: 1, limit: 10000 }),
+        deliveryService.getAll({ page: 1, limit: 10000 }),
       ]);
 
       const getArrayData = (res) => {
